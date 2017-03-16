@@ -19,6 +19,8 @@
 
 from __future__ import absolute_import
 
+import pytest
+
 from memote.support.syntax import (
     find_reaction_tag_transporter, find_rxn_id_compartment_suffix,
     find_abc_tag_transporter, find_upper_case_mets,
@@ -27,21 +29,18 @@ from memote.support.syntax import (
 )
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_non_transp_rxn_id_compartment_suffix_match(model):
     """Expect all reactions outside of the cytosol to be tagged accordingly."""
-    for compartment in model.compartments:
-        if compartment != 'c':
-            no_match_rxns = find_rxn_id_compartment_suffix(model, compartment)
-            assert \
-                len(no_match_rxns) == 0, \
-                "The following reactions in compartment {} are not tagged" \
-                "correctly: {}".format(compartment,
-                                       ", ".join(
-                                           [rxn.id for rxn in no_match_rxns]
-                                       )
-                                       )
+    for compartment in (model.compartments - set(['c'])):
+        no_match_rxns = find_rxn_id_compartment_suffix(model, compartment)
+        assert len(no_match_rxns) == 0, \
+            "The following reactions in compartment {} are not tagged" \
+            "correctly: {}"\
+            "".format(compartment, ", ".join([rxn.id for rxn in no_match_rxns]))
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_non_transp_rxn_id_suffix_compartment_match(model):
     """Expect compartment-tagged reactions to involve fitting metabolites."""
     for compartment in model.compartments:
@@ -57,6 +56,7 @@ def test_non_transp_rxn_id_suffix_compartment_match(model):
                                          )
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_non_abc_transp_rxn_tag_match(model):
     """Expect all non-abc transport reactions to be tagged with a 't'."""
     untagged_non_atp_transport_rxns = find_reaction_tag_transporter(model)
@@ -66,6 +66,7 @@ def test_non_abc_transp_rxn_tag_match(model):
         ", ".join([rxn.id for rxn in untagged_non_atp_transport_rxns]))
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_abc_transp_rxn_tag_match(model):
     """Expect all abc transport reactions to be tagged with 'abc'."""
     untagged_atp_transport_rxns = find_abc_tag_transporter(model)
@@ -75,6 +76,7 @@ def test_abc_transp_rxn_tag_match(model):
         ", ".join([rxn.id for rxn in untagged_atp_transport_rxns]))
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_upper_case_mets(model):
     """Expect all metabolites to be lower case with accepted exceptions."""
     upper_case_mets = find_upper_case_mets(model)
@@ -84,6 +86,7 @@ def test_upper_case_mets(model):
         ", ".join([met.id for met in upper_case_mets]))
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_demand_reaction_tag_match(model):
     """Expect all demand reaction IDs to be prefixed with 'DM_'."""
     falsely_tagged_demand_rxns = find_untagged_demand_rxns(model)
@@ -93,6 +96,7 @@ def test_demand_reaction_tag_match(model):
         ", ".join([rxn.id for rxn in falsely_tagged_demand_rxns]))
 
 
+@pytest.mark.xfail(reason="Syntax tests are not strict model failures.")
 def test_exchange_reaction_tag_match(model):
     """Expect all exchange reaction IDs to be prefixed with 'EX_'."""
     falsely_tagged_exchange_rxns = find_untagged_exchange_rxns(model)

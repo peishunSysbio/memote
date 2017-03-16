@@ -46,7 +46,10 @@ def model(request, solver):
         model = Model(id_or_model=request.param, name=request.param)
     elif request.param == "textbook":
         model = read_sbml_model(join(dirname(memote.__file__), "suite", "examples",
-                               "EcoliCore.xml"))
+                               "EcoliCore.xml.gz"))
+    elif request.param == "ecoli":
+        model = read_sbml_model(join(dirname(memote.__file__), "suite", "examples",
+                               "iJO1366.xml.gz"))
     else:
         builder = getattr(request.module, "model_builder")
         model = builder(request.param)

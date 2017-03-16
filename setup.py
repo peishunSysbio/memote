@@ -50,7 +50,8 @@ requirements = [
     "jinja2-ospath",
     "altair",
     "cookiecutter",
-    "cobra==0.6.0a2"
+    "cobra==0.6.0a2",
+    "pandas"
 ]
 
 test_requirements = [

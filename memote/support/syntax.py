@@ -15,32 +15,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Supporting functions for syntax checks performed on the model object."""
+"""Supporting functions for syntax checks."""
 
 from __future__ import absolute_import
 
 import logging
 import re
+from os.path import join, dirname
 from builtins import dict
 
+import pandas as pd
+
 from memote.support.helpers import (
-    find_atp_adp_converting_reactions, find_demand_and_exchange_reactions,
+    build_reaction_pattern_map,
+    find_atp_adp_converting_reactions,
     find_transport_reactions)
 
 LOGGER = logging.getLogger(__name__)
 
-SUFFIX_MAP = dict({
-    'p': 'pp',
-    'c': 'c',
-    'e': 'e',
-    'er': 'er',
-    'g': 'g',
-    'l': 'l',
-    'm': 'm',
-    'n': 'n',
-    'x': 'x',
-    'v': 'v'})
+COMPARTMENTS = pd.read_csv(
+    join(dirname(__file__), "data", "compartments.csv"),
+    header=0, quotechar='"', comment="#")
+REACTION_SUFFIX = pd.read_csv(
+    join(dirname(__file__), "data", "reaction_suffixes.csv"),
+    header=0, quotechar='"', comment="#")
+COMPARTMENT_SUFFIX = dict(
+    COMPARTMENTS[["symbol", "suffix"]].itertuples(index=False))
 
+
+def find_mistagged_reaction_compartment(model, reaction_match=None,
+        transport_reactions=None):
+    """
+    Find incorrectly tagged reaction IDs.
+
+    Parameters
+    ----------
+    model : cobra.Model
+        A cobrapy metabolic model.
+    reaction_match : dict, optional
+        Reactions and their regexp matches.
+    transport_reactions : iterable, optional
+        A list of transport reactions to be ignored.
+
+    Returns
+    -------
+    list
+        Reactions whose ID suffix does not match their compartment.
+    """
+    if reaction_match is None:
+        reaction_match = build_reaction_pattern_map(model)
+    if transport_reactions is None:
+        transport_reactions = find_transport_reactions(model)
+    wrong = list()
+    for rxn in set(reaction_match) - set(transport_reactions):
+        match = reaction_match[rxn]
+        if len(rxn.compartments) > 1:
+            LOGGER.warn("%s spans different compartments.", rxn.id)
+        if match is None:
+            LOGGER.debug("%s did not match regexp", rxn.id)
+            continue
+        if set(['c']) == rxn.compartments:
+            # cytosolic reaction
+            continue
+        suffix = match.group("suffix")
+        if any(comp in suffix for comp in rxn.compartments):
+            LOGGER.debug("%s's compartments (%s) properly tagged", rxn.id,
+                         ", ".join(rxn.compartments))
+            continue
+        wrong.append(rxn)
+    return wrong
 
 def find_rxn_id_compartment_suffix(model, suffix):
     """
@@ -226,14 +269,8 @@ def find_untagged_demand_rxns(model):
     a high-quality genome-scale metabolic reconstruction. Nature protocols.
     Nature Publishing Group. http://doi.org/10.1038/nprot.2009.203
     """
-    demand_and_exchange_rxns = find_demand_and_exchange_reactions(model)
-    demand_rxns = [rxn for rxn in demand_and_exchange_rxns
-                   if not rxn.reversibility and
-                   rxn.get_compartments() not in ['e']]
-
-    comp_pattern = "^DM_\w*?"
-    return [rxn for rxn in demand_rxns
-            if not re.match(comp_pattern, rxn.id)]
+    return [rxn for rxn in model.exchanges if ('e' not in rxn.compartments) and
+            not rxn.id.startswith("DM_")]
 
 
 def find_untagged_exchange_rxns(model):
@@ -262,10 +299,5 @@ def find_untagged_exchange_rxns(model):
     a high-quality genome-scale metabolic reconstruction. Nature protocols.
     Nature Publishing Group. http://doi.org/10.1038/nprot.2009.203
     """
-    demand_and_exchange_rxns = find_demand_and_exchange_reactions(model)
-    exchange_rxns = [rxn for rxn in demand_and_exchange_rxns
-                     if rxn.get_compartments() == ['e']]
-
-    comp_pattern = "^EX_\w*?"
-    return [rxn for rxn in exchange_rxns
-            if not re.match(comp_pattern, rxn.id)]
+    return [rxn for rxn in model.exchanges if ('e' in rxn.compartments) and
+            not rxn.id.startswith("EX_")]

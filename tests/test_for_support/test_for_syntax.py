@@ -32,7 +32,7 @@ def model_builder(name):
     """Returns a cobra.model built to reflect the required test case"""
     model = cobra.Model(id_or_model=name, name=name)
     if name == "rxn_correct_tags":
-        for i, pairs in enumerate(syntax.SUFFIX_MAP.items()):
+        for i, pairs in enumerate(syntax.COMPARTMENT_SUFFIX.items()):
             if 'c' in pairs[0]:
                 rxn = cobra.Reaction('R{}'.format(i))
             else:
@@ -47,7 +47,7 @@ def model_builder(name):
         return model
 
     if name == "rxn_no_tags":
-        for i, pairs in enumerate(syntax.SUFFIX_MAP.items()):
+        for i, pairs in enumerate(syntax.COMPARTMENT_SUFFIX.items()):
             rxn = cobra.Reaction('R{}'.format(i))
             rxn.add_metabolites(
                 {cobra.Metabolite(id="m{0:d}_{1:s}".format(i, pairs[0]),
@@ -290,32 +290,16 @@ def model_builder(name):
 
 @pytest.mark.parametrize("model, num", [
     ("rxn_correct_tags", 0),
-    ("rxn_no_tags", 1)
-], indirect=["model"])
-def test_non_transp_rxn_id_compartment_suffix_match(model, num):
-    """Expect all rxns outside of the cytosol to be tagged accordingly"""
-    for compartment in model.compartments:
-        if compartment != 'c':
-            rxn_lst = syntax.find_rxn_id_compartment_suffix(model, compartment)
-            assert len(rxn_lst) == num
-
-
-@pytest.mark.parametrize("model, num", [
+    ("rxn_no_tags", 1),
     ("rxn_correct_tags", 0),
     ("rxn_tags_but_wrong_compartments", 1)
 ], indirect=["model"])
-def test_non_transp_rxn_id_suffix_compartment_match(model, num):
-    """
-    Expect all rxns that are tagged to be in a compartment to at least
-    partially involve mets from that compartment
-    """
+def test_find_mistagged_reaction_compartment(model, num):
+    """Expect all rxns outside of the cytosol to be tagged accordingly"""
     for compartment in model.compartments:
         if compartment != 'c':
-            mislab_rxns = syntax.find_rxn_id_suffix_compartment(
-                model, compartment
-            )
-            assert \
-                len(mislab_rxns) == num
+            rxn_lst = syntax.find_mistagged_reaction_compartment(model)
+            assert len(rxn_lst) == num
 
 
 @pytest.mark.parametrize("model, num", [

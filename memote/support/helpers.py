@@ -21,18 +21,34 @@ from __future__ import absolute_import
 
 import logging
 import re
+from builtins import dict
 
 LOGGER = logging.getLogger(__name__)
+REACTION_ID_PATTERN = re.compile(
+    r"^(?P<abbreviation>[A-Z0-9_]+)(?P<suffix>[a-z0-9_]*)$")
 
 
-def find_demand_and_exchange_reactions(model):
+def build_reaction_pattern_map(model, pattern=REACTION_ID_PATTERN):
     """
-    Return a list containing demand and exchange reactions of model.
+    Build a map of reactions and their regexp matches.
 
-    :param model: A cobrapy metabolic model
-    :type model: cobra.core.Model.Model
+    Excludes exchange reactions.
+
+    Parameters
+    ----------
+    model : cobra.Model
+        A cobrapy metabolic model.
+    pattern : regexp, optional
+        A compiled regular expression object that contains the named groups
+        'abbreviation' and 'suffix'.
+
+    Returns
+    -------
+    dict
+        Reactions and their regexp matches.
     """
-    return [rxn for rxn in model.reactions if len(rxn.metabolites.keys()) == 1]
+    reactions = set(model.reactions) - set(model.exchanges)
+    return dict((rxn, pattern.match(rxn.id)) for rxn in reactions)
 
 
 def find_transport_reactions(model):
@@ -51,9 +67,11 @@ def find_transport_reactions(model):
             A cobrapy metabolic model
     """
     compartment_spanning_rxns = \
-        [rxn for rxn in model.reactions if len(rxn.get_compartments()) >= 2]
+        [rxn for rxn in model.reactions if len(rxn.compartments) > 1]
 
     transport_reactions = []
+    proton_set = frozenset(['H'])
+    electron_set = frozenset(['X', 'XH2'])
     for rxn in compartment_spanning_rxns:
         rxn_reactants = set([met.formula for met in rxn.reactants])
         rxn_products = set([met.formula for met in rxn.products])
@@ -61,15 +79,14 @@ def find_transport_reactions(model):
         transported_mets = \
             [formula for formula in rxn_reactants if formula in rxn_products]
         # Excluding H-pumping reactions for now.
-        if set(transported_mets).issubset(set('H')):
-            pass
+        if set(transported_mets).issubset(proton_set):
+            continue
         # Excluding redox-reactions which only transport electrons
-        elif set(transported_mets).issubset(set(['X', 'XH2'])):
-            pass
-
-        elif len(transported_mets) >= 1:
-            transport_reactions.append(rxn)
-
+        if set(transported_mets).issubset(electron_set):
+            continue
+        if len(transported_mets) < 1:
+            LOGGER.error("'%s' is not transporting anything.", rxn.id)
+        transport_reactions.append(rxn)
     return transport_reactions
 
 
