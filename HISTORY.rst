@@ -11,6 +11,8 @@ Next Release
   modules (``--skip test_model_id_presence``).
 * Introduce a dummy configuration file for the report organization and test
   scoring weights.
+* Allow command line option to enable the definition of a custom test directory
+  in combination with a corresponding config file.
 
 0.4.6 (2017-10-31)
 ------------------
