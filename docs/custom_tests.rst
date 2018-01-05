@@ -19,13 +19,12 @@ A Custom Test Module
 --------------------
 
 At its core, a memote test module is a collection of specific python code in a
-text file with the file ending ``.py``. Since, memote uses `pytest`_ for discovery
+text file with the file ending ``.py``. Since, memote uses `pytest <https://docs.pytest.org/en/latest/>`_ for discovery
 and execution of model tests, the `conditions`_ for memote test modules and
 pytest test modules are identical.
 
 The module name has to match either ``test_*.py`` or ``*_test.py``:
 
-.. _pytest: https://docs.pytest.org/en/latest/
 .. _conditions: https://docs.pytest.org/en/latest/goodpractices.html#test-package-name
 
 .. code-block:: console
@@ -85,10 +84,12 @@ The following components are requirements of ``test_your_custom_case``:
 
 - Each test has to be decoreated with the ``annotate()`` decorator, which
   collects:
+
   - The ``data`` that the test is run on. Can be of the following type: ``list``,
     ``set``, ``tuple``, ``string``, ``float``, ``integer`` and ``boolean``. It
     can be of type ``dictionary``, but this is only supported for parametrized
     tests (see example below).
+
   - The ``type`` of data. This is not the actual python type
     of ``data``! Choose it according to how you'd like the results to be
     displayed in the reports. For example: In the case above ``data``
@@ -99,17 +100,21 @@ The following components are requirements of ``test_your_custom_case``:
     the ``metric`` as opposed to the contents of ``data`` use
     ``type="number"``. ``type="object"`` is only supported for parametrized
     tests (see example below).
+
   - A human-readable, descriptive ``title`` that will be displayed in the report
     as opposed to the test function name ``test_your_custom_case`` which will
     only serve as the test's ID internally.
+
   - ``metric`` can be any fraction relating to the quality that is tested. In
     memote's core tests the metrics of each scored tests are used to calculate
     the overall score.
+
   - The ``message`` is a brief summary of the results displayed only on the
     command line. There are no restrictions on what it should include. We've
     generally tried to keep this short and concise to avoid spamming the command
     line.
-- The prefix 'test_' is required by pytest for automatic test discovery.
+
+- The prefix 'test\_' is required by pytest for automatic test discovery.
   Every function with this prefix will be executed when later running memote
   with the configuration to find custom tests.
 
@@ -122,10 +127,9 @@ The following components are requirements of ``test_your_custom_case``:
   followed by a more elaborate explanation that helps the user to understand
   the test's purpose and function.
 
-- The assert statement works just like the assert statement in `pytest`_.
+- The assert statement works just like the assert statement in `pytest <https://docs.pytest.org/en/latest/assert.html>`_.
 
 .. _conventions: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
-.. _pytest: https://docs.pytest.org/en/latest/assert.html
 
 Parametrized Test Function Template
 -----------------------------------
