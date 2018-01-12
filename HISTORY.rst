@@ -13,6 +13,8 @@ Next Release
   scoring weights.
 * Sort unconfigured tests into the card 'Misc. Tests' in the snapshot report.
 * Handle skipped tests better in the snapshot report.
+* Extend test descriptions to make it more clear how a user can satisfy the
+  test conditions.
 
 0.4.6 (2017-10-31)
 ------------------
